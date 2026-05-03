@@ -10,8 +10,8 @@ CORS(app)  # Allow requests from your website
 
 # Load model and vectorizer once when server starts
 print("Loading model and vectorizer...")
-model = joblib.load("model.pkl")
-vectorizer = joblib.load("vectorizer.pkl")
+model = joblib.load("../model/model.pkl")
+vectorizer = joblib.load("../model/vectorizer.pkl")
 print("Ready! Model loaded with", len(model.classes_), "diseases.")
 
 @app.route("/", methods=["GET"])
