@@ -2,6 +2,7 @@ services:
   - type: web
     name: medguard-ai-api
     runtime: python
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
