@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MedGuard AI</title>
+<style>
+:root{--green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;--green-border:#5DCAA5;--amber:#FAEEDA;--amber-text:#633806;--amber-border:#EF9F27;--red-bg:#FCEBEB;--red-text:#501313;--red-border:#F09595;--gray-bg:#F7F7F5;--gray-border:#E0DED8;--text:#1a1a1a;--text-muted:#6b6b6b;--white:#ffffff;--radius:10px;--radius-sm:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--gray-bg);color:var(--text);min-height:100vh}
+header{background:var(--white);border-bottom:1px solid var(--gray-border);padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.logo{width:38px;height:38px;border-radius:50%;background:var(--green-dark);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:20px;height:20px}
+header h1{font-size:18px;font-weight:600}
+header p{font-size:12px;color:var(--text-muted)}
+.groq-status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:#ccc}
+.dot.on{background:var(--green)}
+.container{max-width:760px;margin:0 auto;padding:24px 16px}
+.setup-banner{background:var(--amber);border:1px solid var(--amber-border);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px}
+.setup-banner.hidden{display:none}
+.setup-banner strong{font-size:13px;color:var(--amber-text);display:block;margin-bottom:8px}
+.setup-row{display:flex;gap:8px;flex-wrap:wrap}
+.setup-row input{flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--amber-border);border-radius:var(--radius-sm);font-size:13px}
+.setup-row button{padding:8px 16px;background:var(--amber-text);color:var(--white);border:none;border-radius:var(--radius-sm);font-size:13px;cursor:pointer}
+.steps-bar{display:flex;background:var(--white);border:1px solid var(--gray-border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+.stab{flex:1;padding:12px 8px;text-align:center;cursor:pointer;border-right:1px solid var(--gray-border);background:var(--gray-bg);transition:all 0.15s}
+.stab:last-child{border-right:none}
+.stab.active{background:var(--white);border-bottom:2px solid var(--green)}
+.stab.done{background:var(--white)}
+.stab-num{font-size:10px;color:var(--text-muted);display:block;margin-bottom:2px}
+.stab.active .stab-num{color:var(--green)}
+.stab-label{font-size:13px;font-weight:500;color:var(--text-muted)}
+.stab.active .stab-label{color:var(--green-dark)}
+.stab.done .stab-label{color:var(--text)}
+.card{background:var(--white);border:1px solid var(--gray-border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+.search-input{width:100%;padding:10px 14px;border:1px solid var(--gray-border);border-radius:var(--radius-sm);font-size:14px;margin-bottom:10px}
+.search-input:focus{outline:none;border-color:var(--green)}
+.sym-grid{display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:12px;background:var(--gray-bg);border:1px solid var(--gray-border);border-radius:var(--radius-sm);margin-bottom:12px}
+.chip{padding:5px 11px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--gray-border);background:var(--white);color:var(--text-muted);transition:all .12s;user-select:none}
+.chip:hover{border-color:var(--green);color:var(--green-dark)}
+.chip.on{background:var(--green-light);color:var(--green-dark);border-color:var(--green-border);font-weight:500}
+.sel-bar{font-size:12px;color:var(--text-muted);margin-bottom:8px}
+.sel-chips{display:flex;flex-wrap:wrap;gap:5px;min-height:28px;margin-bottom:14px}
+.sel-chip{padding:4px 10px;border-radius:20px;font-size:12px;background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-border);cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn{width:100%;padding:12px;background:var(--green);color:var(--white);border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sec{padding:9px 16px;background:var(--white);border:1px solid var(--gray-border);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;color:var(--text)}
+.btn-sec:hover{background:var(--gray-bg)}
+.btn-add{padding:8px 14px;background:var(--white);border:1px dashed var(--green-border);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;color:var(--green-dark);margin-bottom:12px;width:100%}
+.btn-add:hover{background:var(--green-light)}
+.nav-row{display:flex;gap:10px;margin-top:14px}
+.nav-row .btn-sec{flex:1}
+.nav-row .btn{flex:2}
+.panel{display:none}
+.panel.active{display:block}
+.disease-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-border)}
+.disease-row:last-child{border-bottom:none}
+.d-rank{width:22px;height:22px;border-radius:50%;background:var(--green-light);color:var(--green-dark);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.d-name{flex:1;font-size:13px;font-weight:500;text-transform:capitalize}
+.conf-bar{height:4px;background:var(--gray-border);border-radius:2px;width:80px;overflow:hidden}
+.conf-fill{height:100%;background:var(--green);border-radius:2px}
+.d-conf{font-size:12px;color:var(--text-muted);min-width:40px;text-align:right}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px}
+.b-green{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-border)}
+.b-amber{background:var(--amber);color:var(--amber-text);border:1px solid var(--amber-border)}
+.b-red{background:var(--red-bg);color:var(--red-text);border:1px solid var(--red-border)}
+.result-text{font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap}
+.med-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:10px 12px;background:var(--gray-bg);border:1px solid var(--gray-border);border-radius:var(--radius-sm)}
+.med-row input{flex:1;padding:7px 10px;border:1px solid var(--gray-border);border-radius:var(--radius-sm);font-size:13px;background:var(--white);min-width:0}
+.med-row input:focus{outline:none;border-color:var(--green)}
+.med-del{padding:6px 10px;background:var(--white);border:1px solid var(--gray-border);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;color:var(--text-muted)}
+.warn-box{padding:14px 16px;border-radius:var(--radius-sm);border:1px solid var(--amber-border);background:var(--amber);margin-top:12px}
+.warn-box strong{font-size:13px;color:var(--amber-text);display:block;margin-bottom:4px}
+.warn-box p{font-size:12px;color:var(--amber-text);line-height:1.6}
+.alt-box{padding:14px 16px;border-radius:var(--radius-sm);border:1px solid var(--green-border);background:var(--green-light);margin-top:10px}
+.alt-box strong{font-size:13px;color:var(--green-dark);display:block;margin-bottom:4px}
+.alt-box p{font-size:12px;color:var(--green-dark);line-height:1.6}
+.danger-box{padding:14px 16px;border-radius:var(--radius-sm);border:1px solid var(--red-border);background:var(--red-bg);margin-top:10px}
+.danger-box strong{font-size:13px;color:var(--red-text);display:block;margin-bottom:4px}
+.danger-box p{font-size:12px;color:var(--red-text);line-height:1.6}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--green);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.disclaimer{font-size:11px;color:var(--text-muted);margin-top:14px;padding:10px 12px;background:var(--gray-bg);border-radius:var(--radius-sm);border-left:3px solid var(--gray-border);line-height:1.6}
+.chat-box{height:320px;overflow-y:auto;padding:12px;background:var(--gray-bg);border:1px solid var(--gray-border);border-radius:var(--radius-sm);margin-bottom:10px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
+.msg.user{background:var(--green);color:var(--white);align-self:flex-end;border-bottom-right-radius:4px}
+.msg.ai{background:var(--white);color:var(--text);align-self:flex-start;border:1px solid var(--gray-border);border-bottom-left-radius:4px}
+.chat-input-row{display:flex;gap:8px}
+.chat-input-row input{flex:1;padding:10px 14px;border:1px solid var(--gray-border);border-radius:var(--radius-sm);font-size:13px}
+.chat-input-row input:focus{outline:none;border-color:var(--green)}
+.chat-send{padding:10px 18px;background:var(--green);color:var(--white);border:none;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-weight:500}
+.chat-send:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 20 20" fill="none"><path d="M10 2v6M7 5h6M4 10h12M10 13v6M7 16h6" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+  </div>
+  <div>
+    <h1>MedGuard AI</h1>
+    <p>ML-powered symptom checker &amp; medicine safety</p>
+  </div>
+  <div class="groq-status">
+    <div class="dot" id="ai-dot"></div>
+    <span id="ai-label">AI not configured</span>
+  </div>
+</header>
+
+<div class="container">
+  <div class="setup-banner" id="setup-banner">
+    <strong>One-time setup — Enter your free Groq API key to activate AI chat</strong>
+    <div class="setup-row">
+      <input type="password" id="groq-key" placeholder="Paste your Groq key here (gsk_...)"/>
+      <button onclick="saveKey()">Activate AI</button>
+    </div>
+  </div>
+
+  <div class="steps-bar">
+    <div class="stab active" id="tab1" onclick="goStep(1)"><span class="stab-num">Step 1</span><span class="stab-label">Symptoms</span></div>
+    <div class="stab" id="tab2" onclick="goStep(2)"><span class="stab-num">Step 2</span><span class="stab-label">Prediction</span></div>
+    <div class="stab" id="tab3" onclick="goStep(3)"><span class="stab-num">Step 3</span><span class="stab-label">Medicines</span></div>
+    <div class="stab" id="tab4" onclick="goStep(4)"><span class="stab-num">Step 4</span><span class="stab-label">Safety</span></div>
+    <div class="stab" id="tab5" onclick="goStep(5)"><span class="stab-num">Step 5</span><span class="stab-label">AI Chat</span></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="panel active" id="p1">
+    <div class="card">
+      <div class="card-title">Select your symptoms</div>
+      <input class="search-input" type="text" id="sym-search" placeholder="Search symptoms (e.g. fever, headache, cough...)" oninput="filterSym(this.value)"/>
+      <div class="sym-grid" id="sym-grid"></div>
+      <div class="sel-bar" id="sel-count">0 symptoms selected</div>
+      <div class="sel-chips" id="sel-chips"></div>
+      <button class="btn" id="pred-btn" onclick="runPredict()" disabled>Predict disease</button>
+    </div>
+    <div class="disclaimer">For informational purposes only. Always consult a qualified healthcare professional.</div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="panel" id="p2">
+    <div class="card">
+      <div class="card-title">Disease prediction</div>
+      <div id="pred-result"><p style="color:var(--text-muted);font-size:13px">Complete Step 1 first.</p></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-sec" onclick="goStep(1)">Back</button>
+      <button class="btn" id="to-med-btn" onclick="goStep(3);initMeds()" disabled>Add medicines</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="panel" id="p3">
+    <div class="card">
+      <div class="card-title">Your medicines</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Enter medicines you are taking. MedGuard AI will check if they match your predicted condition.</p>
+      <div id="med-list"></div>
+      <button class="btn-add" onclick="addMed()">+ Add another medicine</button>
+      <div class="nav-row">
+        <button class="btn-sec" onclick="goStep(2)">Back</button>
+        <button class="btn" onclick="runSafety()">Check medicine safety</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="panel" id="p4">
+    <div id="safety-result"><p style="color:var(--text-muted);font-size:13px">Complete Step 3 first.</p></div>
+    <div class="nav-row">
+      <button class="btn-sec" onclick="goStep(3)">Edit medicines</button>
+      <button class="btn" onclick="goStep(5);initChat()">Ask AI doctor</button>
+    </div>
+    <div class="disclaimer">Medicine feedback is AI-generated. Always verify with a pharmacist or doctor.</div>
+  </div>
+
+  <!-- STEP 5: AI CHAT -->
+  <div class="panel" id="p5">
+    <div class="card">
+      <div class="card-title">AI medical assistant</div>
+      <div class="chat-box" id="chat-box">
+        <div class="msg ai">Hello! I am your MedGuard AI assistant. I know your symptoms and predicted condition. Ask me anything about your health, medicines, or what to do next.</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask anything e.g. What should I do next? Is this serious?" onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="chat-send" id="chat-send-btn" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-sec" onclick="goStep(4)">Back</button>
+      <button class="btn" onclick="goStep(1);resetAll()">New check</button>
+    </div>
+    <div class="disclaimer">AI responses are for information only. Always consult a real doctor for medical decisions.</div>
+  </div>
+</div>
+
+<script src="model-data.js"></script>
+<script>
+const SYMPTOMS=["abnormal appearing skin","abnormal breathing sounds","abnormal involuntary movements","abnormal movement of eyelid","absence of menstruation","abusing alcohol","ache all over","acne or pimples","allergic reaction","ankle pain","ankle swelling","antisocial behavior","anxiety and nervousness","apnea","arm lump or mass","arm pain","arm stiffness or tightness","arm swelling","arm weakness","back cramps or spasms","back mass or lump","back pain","back stiffness or tightness","bleeding from ear","bleeding from eye","bleeding gums","bleeding or discharge from nipple","blindness","blood clots during menstrual periods","blood in stool","blood in urine","bones are painful","breathing fast","bumps on penis","burning abdominal pain","burning chest pain","changes in stool appearance","chest tightness","chills","cloudy eye","congestion in chest","constipation","coryza","cough","coughing up sputum","cramps and spasms","cross eyed","decreased appetite","decreased heart rate","delusions or hallucinations","depression","depressive or psychotic symptoms","diaper rash","diarrhea","difficulty breathing","difficulty eating","difficulty in swallowing","difficulty speaking","diminished hearing","diminished vision","disturbance of memory","dizziness","double vision","drug abuse","dry or flaky scalp","ear pain","elbow pain","elbow swelling","excessive anger","excessive appetite","excessive urination at night","eye burns or stings","eye deviation","eye moves abnormally","eye redness","eyelid lesion or rash","eyelid swelling","facial pain","fainting","fatigue","fears and phobias","feeling ill","fever","flatulence","flu like syndrome","fluid in ear","fluid retention","focal weakness","foot or toe pain","foot or toe stiffness or tightness","foot or toe swelling","foreign body sensation in eye","frequent menstruation","frequent urination","frontal headache","groin mass","groin pain","gum pain","hand or finger lump or mass","hand or finger pain","hand or finger stiffness or tightness","hand or finger swelling","hand or finger weakness","headache","heartburn","heavy menstrual flow","hemoptysis","hesitancy","hip pain","hip stiffness or tightness","hoarse voice","hostile behavior","hot flashes","hurts to breath","hysterical behavior","impotence","increased heart rate","infant feeding problem","infertility","insomnia","intermenstrual bleeding","involuntary urination","irregular appearing nails","irregular appearing scalp","irregular belly button","irregular heartbeat","irritable infant","itchiness of eye","itching of skin","itching of the anus","itchy ear s","itchy eyelid","itchy scalp","jaundice","jaw swelling","joint pain","joint swelling","kidney mass","knee lump or mass","knee pain","knee stiffness or tightness","knee swelling","knee weakness","lack of growth","lacrimation","leg cramps or spasms","leg pain","leg stiffness or tightness","leg swelling","leg weakness","lip swelling","long menstrual periods","loss of sensation","loss of sex drive","low back pain","low self esteem","low urine output","lower abdominal pain","lower body pain","lump in throat","lump or mass of breast","lymphedema","mass in scrotum","mass on eyelid","mass or swelling around the anus","melena","mouth dryness","mouth pain","mouth ulcer","muscle cramps contractures or spasms","muscle pain","nasal congestion","nausea","neck mass","neck pain","neck stiffness or tightness","neck swelling","nightmares","nosebleed","obsessions and compulsions","pain during intercourse","pain during pregnancy","pain in eye","pain in gums","pain in testicles","pain of the anus","pain or soreness of breast","painful menstruation","painful sinuses","painful urination","palpitations","paresthesia","pelvic pain","penile discharge","penis pain","penis redness","peripheral edema","plugged feeling in ear","postpartum problems of the breast","problems during pregnancy","problems with movement","pulling at ears","pus draining from ear","recent pregnancy","rectal bleeding","redness in ear","redness in or around nose","regurgitation","regurgitation 1","restlessness","retention of urine","rib pain","ringing in ear","seizures","sharp abdominal pain","sharp chest pain","shortness of breath","shoulder lump or mass","shoulder pain","shoulder stiffness or tightness","side pain","sinus congestion","skin dryness peeling scaliness or roughness","skin growth","skin irritation","skin lesion","skin moles","skin on arm or hand looks infected","skin on leg or foot looks infected","skin rash","skin swelling","sleepiness","slurring words","smoking problems","sneezing","sore in nose","sore throat","spots or clouds in vision","spotting or bleeding during pregnancy","stiffness all over","stomach bloating","suprapubic pain","sweating","swelling of scrotum","swollen abdomen","swollen eye","swollen lymph nodes","swollen or red tonsils","symptoms of bladder","symptoms of eye","symptoms of infants","symptoms of prostate","symptoms of the face","symptoms of the kidneys","symptoms of the scrotum and testes","temper problems","throat feels tight","throat redness","throat swelling","tongue lesions","too little hair","toothache","unpredictable menstruation","unusual color or odor to urine","upper abdominal pain","uterine contractions","vaginal discharge","vaginal itching","vaginal pain","vaginal redness","vomiting","vomiting blood","vulvar irritation","warts","weakness","weight gain","wheezing","white discharge from eye","wrinkles on skin","wrist lump or mass","wrist pain","wrist stiffness or tightness","wrist swelling"];
+
+const MODEL=window.MODEL_DATA;
+
+let selected=new Set();
+let filtered=[...SYMPTOMS];
+let topDiseases=[];
+let medCount=0;
+let chatHistory=[];
+let groqKey='';
+
+function loadKey(){
+  const k=localStorage.getItem('medguard_groq');
+  if(k){groqKey=k;document.getElementById('setup-banner').classList.add('hidden');setAiStatus(true);}
+}
+function saveKey(){
+  const k=document.getElementById('groq-key').value.trim();
+  if(!k){alert('Please paste your Groq API key first.');return;}
+  groqKey=k;
+  localStorage.setItem('medguard_groq',k);
+  document.getElementById('setup-banner').classList.add('hidden');
+  setAiStatus(true);
+}
+function setAiStatus(on){
+  document.getElementById('ai-dot').className='dot'+(on?' on':'');
+  document.getElementById('ai-label').textContent=on?'AI ready (Groq free)':'AI not configured';
+}
+
+// ML PREDICTION IN BROWSER
+function mlPredict(symptoms){
+  const words=symptoms.toLowerCase().split(/[,\s]+/).filter(w=>w.length>1);
+  const vec=new Array(290).fill(0);
+  // Use IDF-style: just binary presence
+  words.forEach(w=>{
+    // try multi-word match from symptom text
+    Object.keys(MODEL.vocab).forEach(term=>{
+      if(symptoms.toLowerCase().includes(term)){
+        vec[MODEL.vocab[term]]=1;
+      }
+    });
+  });
+  // Also direct vocab match
+  Object.keys(MODEL.vocab).forEach(term=>{
+    if(symptoms.toLowerCase().includes(term)) vec[MODEL.vocab[term]]=1;
+  });
+
+  const scores=MODEL.classes.map((cls,i)=>{
+    let score=MODEL.intercept[i];
+    for(let j=0;j<290;j++) score+=MODEL.coef[i][j]*vec[j];
+    return {disease:cls,score};
+  });
+
+  // Softmax for probabilities
+  scores.sort((a,b)=>b.score-a.score);
+  const top=scores.slice(0,5);
+  const maxScore=top[0].score;
+  const expScores=top.map(s=>Math.exp(s.score-maxScore));
+  const sumExp=expScores.reduce((a,b)=>a+b,0);
+  return top.map((s,i)=>({
+    disease:s.disease,
+    confidence:Math.round(expScores[i]/sumExp*1000)/10
+  }));
+}
+
+function renderGrid(){
+  document.getElementById('sym-grid').innerHTML=filtered.slice(0,120).map(s=>
+    `<span class="chip${selected.has(s)?" on":""}" onclick="toggleSym(this,\`${s}\`)">${s}</span>`
+  ).join('');
+}
+function filterSym(q){
+  filtered=q.trim()?SYMPTOMS.filter(s=>s.includes(q.toLowerCase())):[...SYMPTOMS];
+  renderGrid();
+}
+function toggleSym(el,s){
+  if(selected.has(s)){selected.delete(s);el.classList.remove('on');}
+  else{selected.add(s);el.classList.add('on');}
+  updateSel();
+}
+function updateSel(){
+  const n=selected.size;
+  document.getElementById('sel-count').textContent=n+' symptom'+(n!==1?'s':'')+' selected';
+  document.getElementById('sel-chips').innerHTML=[...selected].map(s=>
+    `<span class="sel-chip" onclick="removeSym(\`${s}\`)">${s} <span style="opacity:.6">×</span></span>`
+  ).join('');
+  const btn=document.getElementById('pred-btn');
+  btn.disabled=n===0;
+  btn.textContent=n>0?`Predict disease (${n} symptoms)`:'Select symptoms first';
+}
+function removeSym(s){selected.delete(s);updateSel();renderGrid();}
+
+function goStep(n){
+  [1,2,3,4,5].forEach(i=>{
+    document.getElementById('p'+i).classList.toggle('active',i===n);
+    const t=document.getElementById('tab'+i);
+    t.classList.remove('active','done');
+    if(i===n)t.classList.add('active');
+    else if(i<n)t.classList.add('done');
+  });
+}
+
+function runPredict(){
+  if(!selected.size)return;
+  goStep(2);
+  const sympText=[...selected].join(' ');
+  const results=mlPredict(sympText);
+  topDiseases=results.slice(0,3).map(r=>r.disease);
+  const html=`
+    <div style="margin-bottom:10px">
+      <span style="font-size:12px;color:var(--text-muted)">Powered by your trained ML model (Logistic Regression · 254 diseases)</span>
+    </div>
+    ${results.map((r,i)=>`
+      <div class="disease-row">
+        <div class="d-rank">${i+1}</div>
+        <div class="d-name">${r.disease}</div>
+        <div class="conf-bar"><div class="conf-fill" style="width:${Math.min(r.confidence,100)}%"></div></div>
+        <div class="d-conf">${r.confidence}%</div>
+      </div>`).join('')}
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
+      Based on symptoms: ${[...selected].join(', ')}
+    </div>`;
+  document.getElementById('pred-result').innerHTML=html;
+  document.getElementById('to-med-btn').disabled=false;
+}
+
+function initMeds(){
+  document.getElementById('med-list').innerHTML='';
+  medCount=0;
+  addMed();
+}
+function addMed(){
+  medCount++;
+  const id='med-'+medCount;
+  const div=document.createElement('div');
+  div.className='med-row';div.id=id;
+  div.innerHTML=`<input type="text" placeholder="Medicine name (e.g. Paracetamol, Metformin)"/>
+    <input type="text" placeholder="Dose (e.g. 500mg)" style="width:110px"/>
+    ${medCount>1?`<button class="med-del" onclick="document.getElementById('${id}').remove()">Remove</button>`:''}`;
+  document.getElementById('med-list').appendChild(div);
+}
+
+async function runSafety(){
+  const rows=document.querySelectorAll('.med-row');
+  const meds=[];
+  rows.forEach(r=>{
+    const ins=r.querySelectorAll('input');
+    const name=ins[0]?.value.trim();
+    const dose=ins[1]?.value.trim();
+    if(name)meds.push(name+(dose?' '+dose:''));
+  });
+  if(!meds.length){alert('Please enter at least one medicine.');return;}
+  goStep(4);
+  const res=document.getElementById('safety-result');
+
+  if(!groqKey){
+    res.innerHTML=`<div class="card"><div class="card-title">Safety report</div>
+      <div class="warn-box"><strong>AI not configured</strong><p>Please enter your free Groq API key at the top of the page to get medicine safety analysis.</p></div></div>`;
+    return;
+  }
+
+  res.innerHTML=`<div class="card"><p style="font-size:13px"><span class="spinner"></span>Checking ${meds.length} medicine${meds.length>1?'s':''}...</p></div>`;
+
+  const diseaseCtx=topDiseases.length?`Patient predicted conditions: ${topDiseases.join(', ')}.`:'No specific condition predicted.';
+  const prompt=`You are MedGuard AI. ${diseaseCtx}
+Patient is taking: ${meds.join(', ')}.
+
+For EACH medicine:
+MEDICINE: [name]
+STATUS: APPROPRIATE / MISMATCH / CAUTION
+REASON: [does this medicine match the predicted disease? 1-2 sentences]
+SIDE EFFECTS: [2-3 key side effects]
+${meds.length>1?'DRUG INTERACTION: [any interaction between these medicines]':''}
+SAFER ALTERNATIVE (only if MISMATCH or CAUTION): [alternative and why]
+
+End with:
+OVERALL SAFETY: SAFE / CAUTION / DANGEROUS
+SUMMARY: [1 sentence advice]`;
+
+  try{
+    const r=await callGroq([{role:'user',content:prompt}],
+      'You are MedGuard AI medicine safety checker. Flag mismatches between disease and medicine clearly.');
+    const hasMismatch=/MISMATCH|not appropriate/i.test(r);
+    const hasDanger=/DANGEROUS|severe interaction/i.test(r);
+    const hasAlt=/safer alternative|instead of/i.test(r);
+    const overall=r.match(/OVERALL SAFETY:\s*(SAFE|CAUTION|DANGEROUS)/i)?.[1]||'CAUTION';
+    const bc=overall==='SAFE'?'b-green':overall==='DANGEROUS'?'b-red':'b-amber';
+    let html=`<div class="card"><div class="card-title">Safety report <span class="badge ${bc}">${overall}</span></div>
+      <div class="result-text">${esc(r)}</div></div>`;
+    if(hasDanger) html+=`<div class="danger-box"><strong>Dangerous combination detected</strong><p>Do NOT take these medicines without consulting a doctor immediately.</p></div>`;
+    else if(hasMismatch) html+=`<div class="warn-box"><strong>Medicine mismatch detected</strong><p>One or more medicines do not match your predicted condition. Review safer alternatives above with your doctor.</p></div>`;
+    if(hasAlt) html+=`<div class="alt-box"><strong>Safer alternatives identified</strong><p>Discuss the alternatives above with your pharmacist before making any changes.</p></div>`;
+    res.innerHTML=html;
+  }catch(e){
+    res.innerHTML=`<div class="card"><p style="color:var(--red-text);font-size:13px">Error: ${e.message}</p></div>`;
+  }
+}
+
+function initChat(){
+  chatHistory=[{
+    role:'system',
+    content:`You are MedGuard AI, a helpful and friendly medical assistant. 
+The patient has these symptoms: ${[...selected].join(', ')}.
+Their predicted conditions are: ${topDiseases.join(', ')}.
+Answer their questions clearly in simple language. Always recommend seeing a doctor for serious concerns.`
+  }];
+}
+
+async function sendChat(){
+  const inp=document.getElementById('chat-input');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  if(!groqKey){alert('Please enter your Groq API key first.');return;}
+  inp.value='';
+  addChatMsg(msg,'user');
+  const btn=document.getElementById('chat-send-btn');
+  btn.disabled=true;
+  addChatMsg('...','ai','typing-msg');
+  chatHistory.push({role:'user',content:msg});
+  try{
+    const reply=await callGroq(chatHistory.filter(m=>m.role!=='system'),chatHistory[0].content);
+    chatHistory.push({role:'assistant',content:reply});
+    document.getElementById('typing-msg')?.remove();
+    addChatMsg(reply,'ai');
+  }catch(e){
+    document.getElementById('typing-msg')?.remove();
+    addChatMsg('Sorry, error: '+e.message,'ai');
+  }
+  btn.disabled=false;
+}
+
+function addChatMsg(text,role,id=''){
+  const box=document.getElementById('chat-box');
+  const div=document.createElement('div');
+  div.className='msg '+role;
+  if(id)div.id=id;
+  div.textContent=text;
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
+
+async function callGroq(messages,system='You are a helpful medical assistant.'){
+  const body={
+    model:'llama-3.3-70b-versatile',
+    max_tokens:800,
+    messages:[{role:'system',content:system},...messages.filter(m=>m.role!=='system')]
+  };
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
+    body:JSON.stringify(body)
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Groq API error');}
+  const d=await r.json();
+  return d.choices[0].message.content;
+}
+
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function resetAll(){selected.clear();filtered=[...SYMPTOMS];renderGrid();updateSel();topDiseases=[];medCount=0;chatHistory=[];document.getElementById('chat-box').innerHTML='<div class="msg ai">Hello! I am your MedGuard AI assistant. Ask me anything about your health.</div>';}
+
+loadKey();
+renderGrid();
+</script>
+</body>
+</html>
